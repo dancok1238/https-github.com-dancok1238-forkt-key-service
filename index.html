@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#170d20">
+<title>FORKT • GET KEY</title>
+<style>
+:root{color-scheme:dark;--bg:#100d14;--card:#1a1421;--line:#3b2b49;--purple:#a56cff;--text:#f7f2ff;--muted:#b6a9c4}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#30203d 0,#100d14 55%);font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text);display:grid;place-items:center;padding:18px}
+main{width:min(100%,460px);background:#17121eeF;border:1px solid var(--line);border-radius:22px;padding:24px;box-shadow:0 20px 70px #0008}
+.logo{display:inline-flex;border:1px solid #654785;border-radius:12px;padding:8px 11px;color:#d9baff;font-weight:800;letter-spacing:.12em}
+h1{font-size:28px;margin:18px 0 6px}p{color:var(--muted);line-height:1.5}.btn{display:block;width:100%;border:0;border-radius:12px;padding:13px 15px;background:var(--purple);color:#170d20;font-size:15px;font-weight:800;margin-top:12px;cursor:pointer}.btn.secondary{background:#2b2036;color:var(--text);border:1px solid var(--line)}.btn:disabled{opacity:.55;cursor:wait}.status{margin-top:15px;padding:12px;border-radius:12px;background:#211a2a;border:1px solid var(--line);white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px}.key{font-family:ui-monospace,monospace;color:#d8ffb5}.small{font-size:12px}.hidden{display:none}.user{padding:10px 12px;border-radius:10px;background:#211a2a;color:#d8c9e6;font-size:13px}
+</style>
+</head>
+<body>
+<main>
+  <div class="logo">FORKT / ACCESS</div>
+  <h1>GET KEY</h1>
+  <p>Login dengan akun Roblox untuk menerbitkan key unik. Key tidak memiliki tanggal kedaluwarsa, tetapi admin dapat mencabutnya.</p>
+  <div id="who" class="user hidden"></div>
+  <button id="login" class="btn">LOGIN WITH ROBLOX</button>
+  <button id="issue" class="btn secondary hidden">GET MY KEY</button>
+  <button id="logout" class="btn secondary hidden">LOG OUT</button>
+  <div id="status" class="status" role="status">Status: belum login.</div>
+  <p class="small">Simpan key yang muncul. Demi keamanan, key asli hanya ditampilkan sekali dan tidak dapat dipulihkan dari database.</p>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+function message(text){$("status").textContent=text;}
+async function refresh(){
+  try{
+    const r=await fetch("/api/me",{credentials:"same-origin"});
+    const d=await r.json();
+    $("login").classList.toggle("hidden",d.loggedIn);
+    $("issue").classList.toggle("hidden",!d.loggedIn);
+    $("logout").classList.toggle("hidden",!d.loggedIn);
+    $("who").classList.toggle("hidden",!d.loggedIn);
+    $("who").textContent=d.loggedIn?`Login sebagai Roblox: ${d.user.username || "(username tidak tersedia)"} • ID ${d.user.id}`:"";
+    message(d.loggedIn?"Login berhasil. Kamu bisa menerbitkan key.":"Status: belum login.");
+  }catch{message("Backend belum tersedia. Periksa deployment Worker.");}
+}
+$("login").onclick=()=>location.href="/auth/login";
+$("issue").onclick=async()=>{
+  $("issue").disabled=true; message("Menerbitkan key...");
+  try{
+    const r=await fetch("/api/issue",{method:"POST",credentials:"same-origin"});
+    const d=await r.json();
+    if(r.status===201){
+      message(`${d.message}\n\nKEY:\n${d.key}\n\nKey ID:\n${d.key_id}`);
+    }else{
+      message(d.message || d.error || "Penerbitan key gagal.");
+    }
+  }catch{message("Tidak dapat terhubung ke backend.");}
+  finally{$("issue").disabled=false;}
+};
+$("logout").onclick=async()=>{
+  await fetch("/auth/logout",{method:"POST",credentials:"same-origin"});
+  await refresh();
+};
+refresh();
+</script>
+</body>
+</html>

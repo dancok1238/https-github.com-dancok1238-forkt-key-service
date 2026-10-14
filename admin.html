@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FORKT • Admin Keys</title>
+<style>
+body{margin:0;background:#100d14;color:#f7f2ff;font:15px system-ui;padding:18px}main{max-width:900px;margin:auto}h1{font-size:25px}input,button{border-radius:10px;border:1px solid #49365b;padding:11px;background:#1a1421;color:#fff}button{cursor:pointer;background:#a56cff;color:#170d20;font-weight:800}section{display:flex;gap:8px;flex-wrap:wrap}#out{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:16px;padding:14px;background:#1a1421;border-radius:12px;border:1px solid #3b2b49}p{color:#b6a9c4}
+</style></head>
+<body><main>
+<h1>FORKT — Admin Key Manager</h1>
+<p>Masukkan ADMIN_TOKEN di perangkat admin. Jangan kirim token ke siapa pun dan jangan menyimpannya di repository.</p>
+<section><input id="token" type="password" autocomplete="off" placeholder="ADMIN_TOKEN" style="flex:1;min-width:220px"><button id="load">Muat daftar</button></section>
+<div id="out">Daftar key belum dimuat.</div>
+<script>
+const $=id=>document.getElementById(id);
+let records=[];
+function auth(){return {Authorization:"Bearer "+$("token").value};}
+$("load").onclick=async()=>{
+  $("out").textContent="Memuat...";
+  try{
+    const r=await fetch("/api/admin/keys",{headers:auth()});
+    const d=await r.json();
+    if(!r.ok){$("out").textContent="Gagal: "+(d.error||r.status);return;}
+    records=d.keys||[];
+    $("out").replaceChildren();
+    if(!records.length){$("out").textContent="Belum ada key.";return;}
+    for(const k of records){
+      const box=document.createElement("div");
+      box.style.cssText="padding:12px;margin:8px 0;border:1px solid #49365b;border-radius:10px";
+      const info=document.createElement("div");
+      info.textContent=`${k.roblox_username||"(tanpa username)"} | Roblox ID: ${k.roblox_user_id} | ${k.status} | dibuat: ${k.created_at} | key_id: ${k.key_id}`;
+      box.append(info);
+      if(k.status==="active"){
+        const b=document.createElement("button");b.textContent="CABUT KEY";b.style.marginTop="10px";
+        b.onclick=async()=>{
+          if(!confirm("Cabut key ini? Akses akan ditolak setelah status diperbarui."))return;
+          const rr=await fetch("/api/revoke",{method:"POST",headers:{...auth(),"Content-Type":"application/json"},body:JSON.stringify({key_id:k.key_id})});
+          const dd=await rr.json();alert(dd.success?"Key dicabut.":(dd.message||dd.error||"Gagal mencabut."));
+          if(dd.success)$("load").click();
+        };
+        box.append(b);
+      }
+      $("out").append(box);
+    }
+  }catch{$("out").textContent="Tidak dapat terhubung ke backend.";}
+};
+</script></main></body></html>

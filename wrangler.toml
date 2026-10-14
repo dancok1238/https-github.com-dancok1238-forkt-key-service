@@ -1,0 +1,14 @@
+name = "forkt-key-service"
+main = "src/worker.js"
+compatibility_date = "2026-10-14"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "forkt-key-db"
+database_id = "REPLACE_WITH_DATABASE_ID"
+migrations_dir = "migrations"
