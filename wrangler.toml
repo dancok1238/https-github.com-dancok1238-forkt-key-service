@@ -10,5 +10,5 @@ not_found_handling = "single-page-application"
 [[d1_databases]]
 binding = "DB"
 database_name = "forkt-key-db"
-database_id = "REPLACE_WITH_DATABASE_ID"
+database_id = "fe74cdfb-2a78-4fc6-bd57-9a0e2ea571fd"
 migrations_dir = "migrations"
